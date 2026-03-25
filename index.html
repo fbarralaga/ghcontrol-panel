@@ -47,13 +47,14 @@
 
 <script>
     // Datos del clúster HiveMQ
-    const host = "wss://broker.emqx.io:8084/mqtt";   // WebSocket sin TLS
-    const clientId = "web_" + Math.random().toString(16).substr(2, 8);
-    const options = {
-        useSSL: true,      // true si usas wss
-        onSuccess: onConnect,
-        onFailure: onFailure
-    };
+const host = "wss://mqtt.eclipseprojects.io:443/mqtt";
+const clientId = "web_" + Math.random().toString(16).substr(2, 8);
+const options = {
+    useSSL: true,
+    onSuccess: onConnect,
+    onFailure: onFailure
+};
+const client = new Paho.MQTT.Client(host, clientId);
     const client = new Paho.MQTT.Client(host, clientId);
 
     function onConnect() {
