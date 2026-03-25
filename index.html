@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHControl Remoto</title>
+    <style>
+        body { font-family: monospace; background: #0f172a; color: #e5e7eb; margin: 20px; }
+        .card { background: #1e293b; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+        button { background: #2563eb; border: none; border-radius: 8px; color: white; padding: 10px 16px; margin: 4px; cursor: pointer; }
+        input { background: #0f172a; border: 1px solid #475569; border-radius: 8px; color: white; padding: 10px; width: 100%; margin: 8px 0; }
+        pre { background: #020617; padding: 12px; border-radius: 12px; white-space: pre-wrap; min-height: 100px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 6px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+</head>
+<body>
+<div class="card">
+    <h2>GHControl - Acceso Remoto</h2>
+    <div class="grid">
+        <button onclick="sendCmd('PING')">PING</button>
+        <button onclick="sendCmd('TIME')">TIME</button>
+        <button onclick="sendCmd('STATUS')">STATUS</button>
+        <button onclick="sendCmd('RN')">RN</button>
+        <button onclick="sendCmd('PARAM')">PARAM</button>
+        <button onclick="sendCmd('LD')">LD</button>
+        <button onclick="sendCmd('LF')">LF</button>
+        <button onclick="sendCmd('LOG ON')">LOG ON</button>
+        <button onclick="sendCmd('LOG OFF')">LOG OFF</button>
+        <button onclick="sendCmd('PUMP ON')">PUMP ON</button>
+        <button onclick="sendCmd('PUMP OFF')">PUMP OFF</button>
+        <button onclick="sendCmd('PUMP AUTO')">PUMP AUTO</button>
+    </div>
+</div>
+<div class="card">
+    <input id="manualCmd" type="text" placeholder="Comando manual (ej: META:220326:GH)">
+    <button onclick="sendManual()">Enviar comando</button>
+</div>
+<div class="card">
+    <h3>Respuesta</h3>
+    <pre id="respuesta">Esperando conexión...</pre>
+</div>
+<div class="card">
+    <h3>Log de eventos</h3>
+    <pre id="log">---</pre>
+</div>
+
+<script>
+    // Datos del clúster HiveMQ
+    const host = "wss://xxxxxxxxx.s1.eu.hivemq.cloud:8884/mqtt";
+    const clientId = "web_" + Math.random().toString(16).substr(2, 8);
+    const options = {
+        useSSL: true,
+        userName: "tu_usuario",      // si no usas autenticación, elimina esta línea
+        password: "tu_contraseña",   // igual
+        onSuccess: onConnect,
+        onFailure: onFailure
+    };
+    const client = new Paho.MQTT.Client(host, clientId);
+
+    function onConnect() {
+        client.subscribe("ghcontrol/resp");
+        document.getElementById('respuesta').innerText = "Conectado. Esperando comandos...";
+    }
+    function onFailure(err) {
+        document.getElementById('respuesta').innerText = "Error MQTT: " + JSON.stringify(err);
+    }
+
+    client.connect(options);
+
+    client.onMessageArrived = function(message) {
+        const respDiv = document.getElementById('respuesta');
+        const logDiv = document.getElementById('log');
+        const payload = message.payloadString;
+        respDiv.innerText = payload;
+        // Guardar en log las últimas 10 respuestas
+        let lines = logDiv.innerText.split('\n');
+        lines.unshift(payload);
+        if (lines.length > 20) lines.pop();
+        logDiv.innerText = lines.join('\n');
+    };
+
+    function sendCmd(cmd) {
+        const message = new Paho.MQTT.Message(cmd);
+        message.destinationName = "ghcontrol/cmd";
+        client.send(message);
+        document.getElementById('respuesta').innerText = "Enviando: " + cmd;
+    }
+
+    function sendManual() {
+        const cmd = document.getElementById('manualCmd').value.trim();
+        if (cmd) sendCmd(cmd);
+    }
+</script>
+</body>
+</html>
