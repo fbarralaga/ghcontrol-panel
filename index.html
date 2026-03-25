@@ -47,12 +47,10 @@
 
 <script>
     // Datos del clúster HiveMQ
-    const host = "wss://xxxxxxxxx.s1.eu.hivemq.cloud:8884/mqtt";
+    const host = "wss://broker.emqx.io:8083/mqtt";   // WebSocket sin TLS
     const clientId = "web_" + Math.random().toString(16).substr(2, 8);
     const options = {
-        useSSL: true,
-        userName: "tu_usuario",      // si no usas autenticación, elimina esta línea
-        password: "tu_contraseña",   // igual
+        useSSL: false,      // true si usas wss
         onSuccess: onConnect,
         onFailure: onFailure
     };
